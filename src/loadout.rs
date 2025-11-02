@@ -1,13 +1,20 @@
 use rand::seq::SliceRandom;
-use rand::thread_rng;
+use rand::rng;
 
 use crate::stratagems::{Stratagem, StratagemType};
 
-pub fn generate_loadout(stratagems: &[Stratagem]) -> Vec<Stratagem> {
-    let mut rng = thread_rng();
+pub fn generate_loadout(stratagems: &[Stratagem]) -> Vec<&Stratagem> {
+    let mut rng = rng();
 
+    // Simple sampling by shuffling indices to avoid needing extra traits.
     for _ in 0..1000 {
-        let candidate: Vec<Stratatgem> = stratagems.choose_multiple(&mut rng, 4).cloned().collect();
+        if stratagems.len() < 4 {
+            panic!("Not enough stratagems to generate a loadout");
+        }
+
+        let mut pool: Vec<&Stratagem> = stratagems.iter().collect();
+        pool.shuffle(&mut rng);
+        let candidate: Vec<&Stratagem> = pool.iter().cloned().take(4).collect();
 
         if is_valid_loadout(&candidate) {
             return candidate;
@@ -17,7 +24,7 @@ pub fn generate_loadout(stratagems: &[Stratagem]) -> Vec<Stratagem> {
     panic!("Failed to generate a valid loadout after many attempts");
 }
 
-fn is_valid_loadout(loadout: &[Stratagem]) -> bool {
+fn is_valid_loadout(loadout: &[&Stratagem]) -> bool {
     let mut backpack_count = 0;
     let mut support_count = 0;
     let mut backpack_allows_support = false;
@@ -26,7 +33,7 @@ fn is_valid_loadout(loadout: &[Stratagem]) -> bool {
         match strat.s_type {
             StratagemType::Backpack => {
                 backpack_count += 1;
-                if strat.allows_support {
+                if strat.allows_support_with_backpack {
                     backpack_allows_support = true;
                 }
             }
@@ -44,7 +51,7 @@ fn is_valid_loadout(loadout: &[Stratagem]) -> bool {
         return false;
     }
     for strat in loadout {
-        if strat.s_type == StratagemType::Support && !strat.allows_support {
+        if strat.s_type == StratagemType::Support && !strat.allows_support_with_backpack {
             return backpack_count == 0 && support_count == 1;
         }
     }
@@ -53,4 +60,19 @@ fn is_valid_loadout(loadout: &[Stratagem]) -> bool {
         return true;
     }
     true
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::stratagems;
+
+    #[test]
+    fn generate_returns_four_and_valid() {
+        let pool = stratagems::get_all_stratagems();
+        let loadout = generate_loadout(&pool);
+        assert_eq!(loadout.len(), 4);
+        assert!(is_valid_loadout(&loadout));
+    }
 }
