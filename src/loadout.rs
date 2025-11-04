@@ -1,5 +1,5 @@
-use rand::seq::SliceRandom;
 use rand::rng;
+use rand::seq::SliceRandom;
 
 use crate::stratagems::{Stratagem, StratagemType};
 
@@ -24,11 +24,13 @@ pub fn generate_loadout(stratagems: &[Stratagem]) -> Vec<&Stratagem> {
     panic!("Failed to generate a valid loadout after many attempts");
 }
 
+// Checks if a loadout is valid based on the rules provided
 fn is_valid_loadout(loadout: &[&Stratagem]) -> bool {
     let mut backpack_count = 0;
     let mut support_count = 0;
     let mut backpack_allows_support = false;
 
+    // Count the number of backpacks and support stratagems
     for strat in loadout {
         match strat.s_type {
             StratagemType::Backpack => {
@@ -62,7 +64,7 @@ fn is_valid_loadout(loadout: &[&Stratagem]) -> bool {
     true
 }
 
-
+// Tests for loadout generation and validation
 #[cfg(test)]
 mod tests {
     use super::*;
